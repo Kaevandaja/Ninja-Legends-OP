@@ -1,0 +1,226 @@
+-- Ninja Legends OP GUI - Clean UI Edition
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Main ScreenGui
+local gui2 = Instance.new("ScreenGui")
+gui2.Name = "NinjaOPGui"
+gui2.Parent = playerGui
+
+-- Main Frame
+local gui2Frame = Instance.new("Frame")
+gui2Frame.Size = UDim2.new(0, 250, 0, 270)
+gui2Frame.Position = UDim2.new(0.05, 0, 0.05, 0)
+gui2Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+gui2Frame.Active = true
+gui2Frame.Draggable = true
+gui2Frame.Parent = gui2
+gui2Frame.Visible = true
+
+local uiCornerMain = Instance.new("UICorner", gui2Frame)
+uiCornerMain.CornerRadius = UDim.new(0, 12)
+
+-- Title
+local gui2Title = Instance.new("TextLabel")
+gui2Title.Size = UDim2.new(1, 0, 0, 30)
+gui2Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+gui2Title.Text = "Ninja Legends OP GUI"
+gui2Title.TextColor3 = Color3.fromRGB(230, 230, 230)
+gui2Title.TextSize = 18
+gui2Title.Font = Enum.Font.GothamBold
+gui2Title.Parent = gui2Frame
+
+local uiCornerTitle = Instance.new("UICorner", gui2Title)
+uiCornerTitle.CornerRadius = UDim.new(0, 12)
+
+-- Button creation helper function
+local function createButton(text, yPos)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 35)
+    btn.Position = UDim2.new(0, 10, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+    btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    btn.Text = text
+    btn.TextSize = 18
+    btn.Font = Enum.Font.GothamSemibold
+    btn.AutoButtonColor = false
+    btn.Parent = gui2Frame
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 10)
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(170, 0, 170)}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 128)}):Play()
+    end)
+
+    return btn
+end
+
+-- Toggle Master Elements Button
+local toggleButton = createButton("Toggle Master Elements", 40)
+
+-- Start Button
+local startButton = createButton("Start", 85)
+
+startButton.MouseButton1Click:Connect(function()
+    local args = {
+        [1] = "convertGems",
+        [2] = 1e300
+    }
+    ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("zenMasterEvent"):FireServer(unpack(args))
+end)
+
+-- Entry Field (Number Input)
+local numberEntry = Instance.new("TextBox")
+numberEntry.Size = UDim2.new(1, -20, 0, 40)
+numberEntry.Position = UDim2.new(0, 10, 0, 130)
+numberEntry.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+numberEntry.Text = ""
+numberEntry.PlaceholderText = "Enter amount"
+numberEntry.TextColor3 = Color3.fromRGB(230, 230, 230)
+numberEntry.TextSize = 18
+numberEntry.Font = Enum.Font.Gotham
+numberEntry.ClearTextOnFocus = true
+numberEntry.Parent = gui2Frame
+local inputCorner = Instance.new("UICorner", numberEntry)
+inputCorner.CornerRadius = UDim.new(0, 10)
+
+numberEntry.Focused:Connect(function()
+    TweenService:Create(numberEntry, TweenInfo.new(0.2), {
+        BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+    }):Play()
+end)
+
+numberEntry.FocusLost:Connect(function()
+    TweenService:Create(numberEntry, TweenInfo.new(0.2), {
+        BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+    }):Play()
+end)
+
+-- Submit Button
+local submitButton = createButton("Submit", 180)
+
+submitButton.MouseButton1Click:Connect(function()
+    local num = tonumber(numberEntry.Text)
+    if num and num > 0 and num <= 9e99 then
+        ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("zenMasterEvent"):FireServer("convertGems", num)
+    else
+        numberEntry.Text = "Invalid number!"
+        numberEntry.TextColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+-- Master Elements GUI
+local masterGui = Instance.new("ScreenGui")
+masterGui.Name = "MasterElementsGui"
+masterGui.Parent = playerGui
+masterGui.Enabled = false
+
+local masterFrame = Instance.new("Frame")
+masterFrame.Size = UDim2.new(0, 300, 0, 450)
+masterFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
+masterFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+masterFrame.BackgroundTransparency = 0
+masterFrame.Active = true
+masterFrame.Draggable = true
+masterFrame.Parent = masterGui
+local masterCorner = Instance.new("UICorner", masterFrame)
+masterCorner.CornerRadius = UDim.new(0, 15)
+
+local masterTitle = Instance.new("TextLabel")
+masterTitle.Size = UDim2.new(1, 0, 0, 40)
+masterTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+masterTitle.Text = "Master Elements"
+masterTitle.TextColor3 = Color3.fromRGB(230, 230, 230)
+masterTitle.TextSize = 22
+masterTitle.Font = Enum.Font.GothamBold
+masterTitle.Parent = masterFrame
+local titleCorner = Instance.new("UICorner", masterTitle)
+titleCorner.CornerRadius = UDim.new(0, 15)
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, 0, 1, -40)
+scrollFrame.Position = UDim2.new(0, 0, 0, 40)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
+scrollFrame.Parent = masterFrame
+
+local elements = {
+    "Shadow Charge",
+    "Electral Chaos",
+    "Blazing Entity",
+    "Shadowfire",
+    "Lightning",
+    "Masterful Wrath",
+    "Inferno",
+    "Eternity Storm",
+    "Frost"
+}
+
+for i, element in ipairs(elements) do
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -20, 0, 40)
+    button.Position = UDim2.new(0, 10, 0, (i - 1) * 45)
+    button.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+    button.Text = "Master " .. element
+    button.TextColor3 = Color3.fromRGB(0, 0, 0)
+    button.TextSize = 18
+    button.Font = Enum.Font.GothamSemibold
+    button.Parent = scrollFrame
+    local btnCorner = Instance.new("UICorner", button)
+    btnCorner.CornerRadius = UDim.new(0, 10)
+
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(170, 0, 170)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 128)}):Play()
+    end)
+
+    button.MouseButton1Click:Connect(function()
+        ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("elementMasteryEvent"):FireServer(element)
+    end)
+end
+
+-- Toggle Master Elements GUI with animation
+toggleButton.MouseButton1Click:Connect(function()
+    if masterGui.Enabled then
+        local tween = TweenService:Create(masterFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+        tween:Play()
+        tween.Completed:Wait()
+        masterGui.Enabled = false
+        masterFrame.BackgroundTransparency = 0
+    else
+        masterGui.Enabled = true
+        masterFrame.BackgroundTransparency = 1
+        local tween = TweenService:Create(masterFrame, TweenInfo.new(0.3), {BackgroundTransparency = 0})
+        tween:Play()
+    end
+end)
+
+-- K Hotkey to toggle main GUI visibility with fade
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.K then
+        if gui2Frame.Visible then
+            local tween = TweenService:Create(gui2Frame, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+            tween:Play()
+            tween.Completed:Wait()
+            gui2Frame.Visible = false
+            gui2Frame.BackgroundTransparency = 0
+        else
+            gui2Frame.Visible = true
+            gui2Frame.BackgroundTransparency = 1
+            local tween = TweenService:Create(gui2Frame, TweenInfo.new(0.3), {BackgroundTransparency = 0})
+            tween:Play()
+        end
+    end
+end)
