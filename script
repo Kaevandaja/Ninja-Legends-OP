@@ -1,226 +1,737 @@
--- Ninja Legends OP GUI - Clean UI Edition
+-- Ninja Legends OP GUI
+-- Features: Ninja Legends (Teleport, Infinite Gems, Gems Submit, WalkSpeed, JumpPower, Fly, Anti-AFK)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
 
--- Main ScreenGui
-local gui2 = Instance.new("ScreenGui")
-gui2.Name = "NinjaOPGui"
-gui2.Parent = playerGui
+-- THEMES
+local themes = {
+	Default = {
+		BG = Color3.fromRGB(22, 24, 28),
+		TAB_BG = Color3.fromRGB(30, 34, 42),
+		ITEM_BG = Color3.fromRGB(28, 32, 44),
+		TAB_COLOR = Color3.fromRGB(40, 120, 255),
+		OUTLINE = Color3.fromRGB(255, 60, 175),
+		ACCENT = Color3.fromRGB(32, 181, 239),
+		TEXT = Color3.fromRGB(225, 233, 255),
+		GRAD = ColorSequence.new{
+			ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 60, 175)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1.0, Color3.fromRGB(40, 120, 255))
+		},
+		NAME = "Default"
+	},
+	["Neon Cyber"] = {
+		BG = Color3.fromRGB(8, 10, 22),
+		TAB_BG = Color3.fromRGB(18, 15, 44),
+		ITEM_BG = Color3.fromRGB(18, 22, 38),
+		TAB_COLOR = Color3.fromRGB(0, 255, 255),
+		OUTLINE = Color3.fromRGB(255, 0, 175),
+		ACCENT = Color3.fromRGB(255, 255, 85),
+		TEXT = Color3.fromRGB(0, 255, 255),
+		GRAD = ColorSequence.new{
+			ColorSequenceKeypoint.new(0.0, Color3.fromRGB(0, 255, 255)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 175)),
+			ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255, 255, 85))
+		},
+		NAME = "Neon Cyber"
+	},
+	Halloween = {
+		BG = Color3.fromRGB(38, 25, 18),
+		TAB_BG = Color3.fromRGB(54, 31, 17),
+		ITEM_BG = Color3.fromRGB(44, 28, 18),
+		TAB_COLOR = Color3.fromRGB(255, 132, 32),
+		OUTLINE = Color3.fromRGB(255, 85, 0),
+		ACCENT = Color3.fromRGB(255, 213, 0),
+		TEXT = Color3.fromRGB(255, 210, 170),
+		GRAD = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 132, 32)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 85, 0)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 213, 0))
+		},
+		NAME = "Halloween"
+	},
+	Christmas = {
+		BG = Color3.fromRGB(24, 33, 24),
+		TAB_BG = Color3.fromRGB(42, 64, 42),
+		ITEM_BG = Color3.fromRGB(34, 54, 34),
+		TAB_COLOR = Color3.fromRGB(200, 36, 36),
+		OUTLINE = Color3.fromRGB(0, 255, 64),
+		ACCENT = Color3.fromRGB(255, 255, 255),
+		TEXT = Color3.fromRGB(255, 250, 250),
+		GRAD = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,64)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200,36,36)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
+		},
+		NAME = "Christmas"
+	},
+	Summer = {
+		BG = Color3.fromRGB(224, 244, 255),
+		TAB_BG = Color3.fromRGB(170, 210, 255),
+		ITEM_BG = Color3.fromRGB(200, 230, 255),
+		TAB_COLOR = Color3.fromRGB(249, 194, 66),
+		OUTLINE = Color3.fromRGB(66, 170, 249),
+		ACCENT = Color3.fromRGB(255, 125, 64),
+		TEXT = Color3.fromRGB(22, 24, 28),
+		GRAD = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(66,170,249)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,125,64)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(249,194,66))
+		},
+		NAME = "Summer"
+	}
+}
+local themeOrder = {"Default", "Neon Cyber", "Halloween", "Christmas", "Summer"}
+local currentThemeIdx = 1
+local currentTheme = themes[themeOrder[currentThemeIdx]]
 
--- Main Frame
-local gui2Frame = Instance.new("Frame")
-gui2Frame.Size = UDim2.new(0, 250, 0, 270)
-gui2Frame.Position = UDim2.new(0.05, 0, 0.05, 0)
-gui2Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-gui2Frame.Active = true
-gui2Frame.Draggable = true
-gui2Frame.Parent = gui2
-gui2Frame.Visible = true
+local FRAME_WIDTH, FRAME_HEIGHT = 700, 460
+local CLOSE_COLOR = Color3.fromRGB(255, 80, 80)
+local DESTROY_COLOR = Color3.fromRGB(200, 50, 200)
+local toggleKey = Enum.KeyCode.K
 
-local uiCornerMain = Instance.new("UICorner", gui2Frame)
-uiCornerMain.CornerRadius = UDim.new(0, 12)
-
--- Title
-local gui2Title = Instance.new("TextLabel")
-gui2Title.Size = UDim2.new(1, 0, 0, 30)
-gui2Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-gui2Title.Text = "Ninja Legends OP GUI"
-gui2Title.TextColor3 = Color3.fromRGB(230, 230, 230)
-gui2Title.TextSize = 18
-gui2Title.Font = Enum.Font.GothamBold
-gui2Title.Parent = gui2Frame
-
-local uiCornerTitle = Instance.new("UICorner", gui2Title)
-uiCornerTitle.CornerRadius = UDim.new(0, 12)
-
--- Button creation helper function
-local function createButton(text, yPos)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 35)
-    btn.Position = UDim2.new(0, 10, 0, yPos)
-    btn.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
-    btn.TextColor3 = Color3.fromRGB(0, 0, 0)
-    btn.Text = text
-    btn.TextSize = 18
-    btn.Font = Enum.Font.GothamSemibold
-    btn.AutoButtonColor = false
-    btn.Parent = gui2Frame
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 10)
-
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(170, 0, 170)}):Play()
-    end)
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 128)}):Play()
-    end)
-
-    return btn
+local function showWarning(msg)
+	local warnGui = Instance.new("ScreenGui")
+	warnGui.IgnoreGuiInset = true
+	warnGui.ResetOnSpawn = false
+	warnGui.Parent = playerGui
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(1,0,1,0)
+	bg.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	bg.BackgroundTransparency = 0.4
+	bg.Parent = warnGui
+	local box = Instance.new("Frame")
+	box.Size = UDim2.new(0, 410, 0, 72)
+	box.Position = UDim2.new(0.5, -205, 0.5, -36)
+	box.BackgroundColor3 = currentTheme.TAB_BG
+	box.Parent = bg
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 15)
+	corner.Parent = box
+	local label = Instance.new("TextLabel")
+	label.Text = msg
+	label.TextWrapped = true
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = currentTheme.OUTLINE
+	label.TextSize = 18
+	label.Font = Enum.Font.GothamBold
+	label.Parent = box
+	task.spawn(function()
+		wait(2)
+		warnGui:Destroy()
+	end)
 end
 
--- Toggle Master Elements Button
-local toggleButton = createButton("Toggle Master Elements", 40)
+-- Toast
+local function notify(msg)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {Title="Ninja Legends OP", Text=msg, Duration=2})
+	end)
+end
 
--- Start Button
-local startButton = createButton("Start", 85)
+-- GUI construction
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "UltraProTabbedGui"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
 
-startButton.MouseButton1Click:Connect(function()
-    local args = {
-        [1] = "convertGems",
-        [2] = 1e300
-    }
-    ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("zenMasterEvent"):FireServer(unpack(args))
+local frame = Instance.new("Frame")
+frame.Name = "MainFrame"
+frame.Size = UDim2.new(0, FRAME_WIDTH, 0, FRAME_HEIGHT)
+frame.Position = UDim2.new(0.5, -(FRAME_WIDTH//2), 0.5, -(FRAME_HEIGHT//2))
+frame.BackgroundColor3 = currentTheme.BG
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 13)
+corner.Parent = frame
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 5
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Color = currentTheme.OUTLINE
+stroke.Parent = frame
+local grad = Instance.new("UIGradient")
+grad.Rotation = 0
+grad.Color = currentTheme.GRAD
+grad.Parent = stroke
+RunService.RenderStepped:Connect(function()
+	grad.Rotation = (tick() * 25) % 360
 end)
 
--- Entry Field (Number Input)
+-- TITLE BAR & BUTTONS
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 38)
+titleBar.BackgroundColor3 = currentTheme.TAB_BG
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+local titleText = Instance.new("TextLabel")
+titleText.Text = "Ninja Legends GUI"
+titleText.Font = Enum.Font.GothamSemibold
+titleText.TextColor3 = currentTheme.TEXT
+titleText.TextSize = 22
+titleText.BackgroundTransparency = 1
+titleText.Size = UDim2.new(1, -200, 1, 0)
+titleText.Position = UDim2.new(0, 18, 0, 0)
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.Parent = titleBar
+
+local themeButton = Instance.new("TextButton")
+themeButton.Text = "🎨 " .. currentTheme.NAME
+themeButton.Font = Enum.Font.GothamBold
+themeButton.TextColor3 = currentTheme.TEXT
+themeButton.TextSize = 18
+themeButton.BackgroundColor3 = currentTheme.TAB_COLOR
+themeButton.Size = UDim2.new(0, 120, 0, 28)
+themeButton.Position = UDim2.new(1, -170, 0.5, -14)
+themeButton.BorderSizePixel = 0
+themeButton.AutoButtonColor = true
+themeButton.Parent = titleBar
+local themeCorner = Instance.new("UICorner")
+themeCorner.CornerRadius = UDim.new(0, 8)
+themeCorner.Parent = themeButton
+
+local closeButton = Instance.new("TextButton")
+closeButton.Text = "✖"
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextColor3 = Color3.fromRGB(255,255,255)
+closeButton.TextSize = 20
+closeButton.BackgroundColor3 = CLOSE_COLOR
+closeButton.Size = UDim2.new(0, 36, 0, 28)
+closeButton.Position = UDim2.new(1, -44, 0.5, -14)
+closeButton.BorderSizePixel = 0
+closeButton.AutoButtonColor = true
+closeButton.Parent = titleBar
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeButton
+
+local tabsBar = Instance.new("Frame")
+tabsBar.Name = "TabsBar"
+tabsBar.BackgroundColor3 = currentTheme.TAB_BG
+tabsBar.Size = UDim2.new(1, 0, 0, 36)
+tabsBar.Position = UDim2.new(0, 0, 0, 38)
+tabsBar.BorderSizePixel = 0
+tabsBar.Parent = frame
+
+local tabNames = {"Ninja Legends", "Teleport Hub", "Settings"}
+local tabButtons = {}
+local tabContentFrames = {}
+
+local function makeTabButton(idx, name)
+	local btn = Instance.new("TextButton")
+	btn.Text = name
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 19
+	btn.TextColor3 = currentTheme.TEXT
+	btn.BackgroundColor3 = idx == 1 and currentTheme.TAB_COLOR or currentTheme.TAB_BG
+	btn.Size = UDim2.new(0, 210, 1, 0)
+	btn.Position = UDim2.new(0, ((idx - 1) * 220) + 16, 0, 0)
+	btn.BorderSizePixel = 0
+	btn.Parent = tabsBar
+	local tabCorner = Instance.new("UICorner")
+	tabCorner.CornerRadius = UDim.new(0, 8)
+	tabCorner.Parent = btn
+	tabButtons[name] = btn
+	return btn
+end
+
+local function makeTabContentFrame(idx)
+	local cframe = Instance.new("Frame")
+	cframe.Name = "TabContent_" .. tabNames[idx]
+	cframe.BackgroundColor3 = currentTheme.BG
+	cframe.Position = UDim2.new(0, 0, 0, 74)
+	cframe.Size = UDim2.new(1, 0, 1, -74)
+	cframe.BorderSizePixel = 0
+	cframe.Visible = idx == 1
+	cframe.Parent = frame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 11)
+	corner.Parent = cframe
+	tabContentFrames[tabNames[idx]] = cframe
+	return cframe
+end
+
+for i, name in ipairs(tabNames) do
+	makeTabButton(i, name)
+	makeTabContentFrame(i)
+end
+
+local function applyTheme(theme)
+	frame.BackgroundColor3 = theme.BG
+	tabsBar.BackgroundColor3 = theme.TAB_BG
+	titleBar.BackgroundColor3 = theme.TAB_BG
+	for name, btn in pairs(tabButtons) do
+		btn.BackgroundColor3 = (tabContentFrames[name].Visible and theme.TAB_COLOR) or theme.TAB_BG
+		btn.TextColor3 = theme.TEXT
+	end
+	titleText.TextColor3 = theme.TEXT
+	themeButton.BackgroundColor3 = theme.TAB_COLOR
+	themeButton.TextColor3 = theme.TEXT
+	stroke.Color = theme.OUTLINE
+	grad.Color = theme.GRAD
+	for _, cframe in pairs(tabContentFrames) do
+		cframe.BackgroundColor3 = theme.BG
+		for _, item in ipairs(cframe:GetChildren()) do
+			if item:IsA("Frame") and item.Name:find("Item") then
+				item.BackgroundColor3 = theme.ITEM_BG
+				for _, obj in ipairs(item:GetChildren()) do
+					if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+						obj.TextColor3 = theme.TEXT
+					end
+				end
+			end
+		end
+	end
+end
+
+themeButton.MouseButton1Click:Connect(function()
+	currentThemeIdx = currentThemeIdx % #themeOrder + 1
+	currentTheme = themes[themeOrder[currentThemeIdx]]
+	themeButton.Text = "🎨 " .. currentTheme.NAME
+	applyTheme(currentTheme)
+end)
+
+local function switchTab(tabName)
+	for name, btn in pairs(tabButtons) do
+		btn.BackgroundColor3 = (name == tabName) and currentTheme.TAB_COLOR or currentTheme.TAB_BG
+	end
+	for name, cframe in pairs(tabContentFrames) do
+		cframe.Visible = (name == tabName)
+	end
+end
+for name, btn in pairs(tabButtons) do
+	btn.MouseButton1Click:Connect(function()
+		switchTab(name)
+	end)
+end
+
+closeButton.MouseButton1Click:Connect(function()
+	frame.Visible = false
+end)
+
+-- Drag logic
+local dragging = false
+local dragInput, dragStart, startPos
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+titleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+		if input.KeyCode == toggleKey then
+			frame.Visible = not frame.Visible
+		end
+	end
+end)
+
+-------------------------------------------------------------------
+-- NINJA LEGENDS MAIN TAB: Infinite Coins, Submit Coins
+-------------------------------------------------------------------
+local ninjaFrame = tabContentFrames["Ninja Legends"]
+
+local y = 18
+local function makeItemFrame(h)
+	local item = Instance.new("Frame")
+	item.Name = "Item"
+	item.Size = UDim2.new(1, -32, 0, h or 52)
+	item.Position = UDim2.new(0, 16, 0, y)
+	item.BackgroundColor3 = currentTheme.ITEM_BG
+	item.Parent = ninjaFrame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = item
+	y = y + (h or 52) + 10
+	return item
+end
+
+-- Infinite Gems
+local infGemsItem = makeItemFrame()
+local infGemsBtn = Instance.new("TextButton")
+infGemsBtn.Size = UDim2.new(1, 0, 1, 0)
+infGemsBtn.BackgroundColor3 = currentTheme.ACCENT
+infGemsBtn.Text = "💎 Give Infinite Coins"
+infGemsBtn.TextColor3 = currentTheme.TEXT
+infGemsBtn.TextSize = 20
+infGemsBtn.Font = Enum.Font.GothamBold
+infGemsBtn.Parent = infGemsItem
+Instance.new("UICorner", infGemsBtn).CornerRadius = UDim.new(0, 10)
+infGemsBtn.MouseButton1Click:Connect(function()
+    local args = {[1] = "convertGems", [2] = 1e300}
+    ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("zenMasterEvent"):FireServer(unpack(args))
+    notify("Infinite coins submitted!")
+end)
+
+-- Gems Amount Entry/Submit
+local submitGemsItem = makeItemFrame()
 local numberEntry = Instance.new("TextBox")
-numberEntry.Size = UDim2.new(1, -20, 0, 40)
-numberEntry.Position = UDim2.new(0, 10, 0, 130)
-numberEntry.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+numberEntry.Size = UDim2.new(0.64, -4, 1, 0)
+numberEntry.Position = UDim2.new(0, 0, 0, 0)
+numberEntry.BackgroundColor3 = currentTheme.ITEM_BG
 numberEntry.Text = ""
-numberEntry.PlaceholderText = "Enter amount"
-numberEntry.TextColor3 = Color3.fromRGB(230, 230, 230)
-numberEntry.TextSize = 18
+numberEntry.PlaceholderText = "💰 Enter Coins Amount"
+numberEntry.TextColor3 = currentTheme.TEXT
+numberEntry.TextSize = 19
 numberEntry.Font = Enum.Font.Gotham
 numberEntry.ClearTextOnFocus = true
-numberEntry.Parent = gui2Frame
-local inputCorner = Instance.new("UICorner", numberEntry)
-inputCorner.CornerRadius = UDim.new(0, 10)
-
-numberEntry.Focused:Connect(function()
-    TweenService:Create(numberEntry, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-    }):Play()
-end)
-
-numberEntry.FocusLost:Connect(function()
-    TweenService:Create(numberEntry, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-    }):Play()
-end)
-
--- Submit Button
-local submitButton = createButton("Submit", 180)
-
-submitButton.MouseButton1Click:Connect(function()
+numberEntry.Parent = submitGemsItem
+Instance.new("UICorner", numberEntry).CornerRadius = UDim.new(0, 10)
+local submitGemsBtn = Instance.new("TextButton")
+submitGemsBtn.Size = UDim2.new(0.36, -4, 1, 0)
+submitGemsBtn.Position = UDim2.new(0.64, 8, 0, 0)
+submitGemsBtn.BackgroundColor3 = currentTheme.ACCENT
+submitGemsBtn.Text = "🚀 Submit"
+submitGemsBtn.TextColor3 = currentTheme.TEXT
+submitGemsBtn.TextSize = 17
+submitGemsBtn.Font = Enum.Font.GothamBold
+submitGemsBtn.Parent = submitGemsItem
+Instance.new("UICorner", submitGemsBtn).CornerRadius = UDim.new(0, 10)
+submitGemsBtn.MouseButton1Click:Connect(function()
     local num = tonumber(numberEntry.Text)
     if num and num > 0 and num <= 9e99 then
         ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("zenMasterEvent"):FireServer("convertGems", num)
+        numberEntry.Text = ""
+        numberEntry.TextColor3 = currentTheme.TEXT
+        notify("Coins submitted!")
     else
         numberEntry.Text = "Invalid number!"
-        numberEntry.TextColor3 = Color3.fromRGB(255, 0, 0)
+        numberEntry.TextColor3 = currentTheme.OUTLINE
+        notify("Invalid number!")
     end
 end)
 
--- Master Elements GUI
-local masterGui = Instance.new("ScreenGui")
-masterGui.Name = "MasterElementsGui"
-masterGui.Parent = playerGui
-masterGui.Enabled = false
+-------------------------------------------------------------------
+-- TELEPORT HUB TAB: All teleport locations
+-------------------------------------------------------------------
+local teleportTabFrame = tabContentFrames["Teleport Hub"]
 
-local masterFrame = Instance.new("Frame")
-masterFrame.Size = UDim2.new(0, 300, 0, 450)
-masterFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
-masterFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-masterFrame.BackgroundTransparency = 0
-masterFrame.Active = true
-masterFrame.Draggable = true
-masterFrame.Parent = masterGui
-local masterCorner = Instance.new("UICorner", masterFrame)
-masterCorner.CornerRadius = UDim.new(0, 15)
-
-local masterTitle = Instance.new("TextLabel")
-masterTitle.Size = UDim2.new(1, 0, 0, 40)
-masterTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-masterTitle.Text = "Master Elements"
-masterTitle.TextColor3 = Color3.fromRGB(230, 230, 230)
-masterTitle.TextSize = 22
-masterTitle.Font = Enum.Font.GothamBold
-masterTitle.Parent = masterFrame
-local titleCorner = Instance.new("UICorner", masterTitle)
-titleCorner.CornerRadius = UDim.new(0, 15)
-
-local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, 0, 1, -40)
-scrollFrame.Position = UDim2.new(0, 0, 0, 40)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.ScrollBarThickness = 6
-scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
-scrollFrame.Parent = masterFrame
-
-local elements = {
-    "Shadow Charge",
-    "Electral Chaos",
-    "Blazing Entity",
-    "Shadowfire",
-    "Lightning",
-    "Masterful Wrath",
-    "Inferno",
-    "Eternity Storm",
-    "Frost"
+local teleportLocations = {
+	{name = "Spawn", icon = "🏠", pos = Vector3.new(0, 10, 0)},
+	{name = "Shop", icon = "🏪", pos = Vector3.new(122.13, 3, 29)},
+	{name = "Boss", icon = "👹", pos = Vector3.new(462.33, 8.80, 95.98)},
+	{name = "Enchanted Island", icon = "✨", pos = Vector3.new(26.99, 766.24, -114.43)},
+	{name = "Astral Island", icon = "🌠", pos = Vector3.new(247.10, 2013.94, 347.21)},
+	{name = "Mystical Island", icon = "🔮", pos = Vector3.new(162.74, 4047.35, 13.38)},
+	{name = "Space Island", icon = "🚀", pos = Vector3.new(199.77, 5656.95, 12.94)},
+	{name = "Tundra Island", icon = "❄️", pos = Vector3.new(199.77, 9284.95, 12.94)},
+	{name = "Eternal Island", icon = "∞", pos = Vector3.new(199.77, 13679.80, 12.94)},
+	{name = "Sandstorm", icon = "🌪️", pos = Vector3.new(199.77, 17686.10, 12.94)},
+	{name = "Thuderstorm", icon = "⛈️", pos = Vector3.new(199.77, 24069.79, 12.94)},
+	{name = "Ancient Inferno Island", icon = "🔥", pos = Vector3.new(197.87, 28256.06, 7.04)},
+	{name = "Midnight Shadow Island", icon = "🌑", pos = Vector3.new(197.87, 33206.75, 7.04)},
+	{name = "Mythical Souls Island", icon = "👻", pos = Vector3.new(197.87, 39317.34, 7.04)},
+	{name = "Winter Wonder Island", icon = "☃️", pos = Vector3.new(197.87, 46010.32, 7.04)},
+	{name = "Golden Master Island", icon = "🌟", pos = Vector3.new(197.87, 52607.53, 7.04)},
+	{name = "Dragon Legend Island", icon = "🐉", pos = Vector3.new(197.87, 59594.45, 7.04)},
+	{name = "Cybernetic Legends Island", icon = "🤖", pos = Vector3.new(197.87, 66668.94, 7.04)},
+	{name = "Skystorm Ultraus Island", icon = "⚡", pos = Vector3.new(197.87, 70270.93, 7.04)},
+	{name = "Soul Fusion Island", icon = "💀", pos = Vector3.new(197.87, 79746.76, 7.04)},
+	{name = "Chaos Legends Island", icon = "🌌", pos = Vector3.new(197.87, 74442.62, 7.04)},
+	{name = "Dark Elements Island", icon = "🌑", pos = Vector3.new(197.87, 83198.76, 7.04)},
+	{name = "Inner Peace Island", icon = "🧘", pos = Vector3.new(197.87, 87050.84, 7.04)},
+	{name = "Blazing Vortex Island", icon = "🌋", pos = Vector3.new(197.87, 91245.84, 7.04)},
 }
 
-for i, element in ipairs(elements) do
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -20, 0, 40)
-    button.Position = UDim2.new(0, 10, 0, (i - 1) * 45)
-    button.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
-    button.Text = "Master " .. element
-    button.TextColor3 = Color3.fromRGB(0, 0, 0)
-    button.TextSize = 18
-    button.Font = Enum.Font.GothamSemibold
-    button.Parent = scrollFrame
-    local btnCorner = Instance.new("UICorner", button)
-    btnCorner.CornerRadius = UDim.new(0, 10)
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -48, 1, -32)
+scroll.Position = UDim2.new(0, 24, 0, 16)
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0, 0, 0, #teleportLocations * 50)
+scroll.ScrollBarThickness = 12
+scroll.Parent = teleportTabFrame
 
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(170, 0, 170)}):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(128, 0, 128)}):Play()
-    end)
-
-    button.MouseButton1Click:Connect(function()
-        ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("elementMasteryEvent"):FireServer(element)
-    end)
+for i, loc in ipairs(teleportLocations) do
+	local tbtn = Instance.new("TextButton")
+	tbtn.Size = UDim2.new(1, -10, 0, 44)
+	tbtn.Position = UDim2.new(0, 5, 0, (i-1) * 50)
+	tbtn.BackgroundColor3 = currentTheme.ACCENT
+	tbtn.Text = loc.icon .. "  " .. loc.name
+	tbtn.TextColor3 = currentTheme.TEXT
+	tbtn.TextSize = 19
+	tbtn.Font = Enum.Font.Gotham
+	tbtn.Parent = scroll
+	local tbtnCorner = Instance.new("UICorner", tbtn)
+	tbtnCorner.CornerRadius = UDim.new(0, 10)
+	tbtn.MouseEnter:Connect(function()
+		TweenService:Create(tbtn, TweenInfo.new(0.15), {BackgroundColor3 = currentTheme.TAB_COLOR, TextColor3 = currentTheme.OUTLINE}):Play()
+	end)
+	tbtn.MouseLeave:Connect(function()
+		TweenService:Create(tbtn, TweenInfo.new(0.15), {BackgroundColor3 = currentTheme.ACCENT, TextColor3 = currentTheme.TEXT}):Play()
+	end)
+	tbtn.MouseButton1Click:Connect(function()
+		local char = player.Character or player.CharacterAdded:Wait()
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			hrp.CFrame = CFrame.new(loc.pos)
+			notify("Teleported to "..loc.name)
+		end
+	end)
 end
 
--- Toggle Master Elements GUI with animation
-toggleButton.MouseButton1Click:Connect(function()
-    if masterGui.Enabled then
-        local tween = TweenService:Create(masterFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1})
-        tween:Play()
-        tween.Completed:Wait()
-        masterGui.Enabled = false
-        masterFrame.BackgroundTransparency = 0
-    else
-        masterGui.Enabled = true
-        masterFrame.BackgroundTransparency = 1
-        local tween = TweenService:Create(masterFrame, TweenInfo.new(0.3), {BackgroundTransparency = 0})
-        tween:Play()
-    end
-end)
+-------------------------------------------------------------------
+-- SETTINGS TAB: WalkSpeed, JumpPower, Fly
+-------------------------------------------------------------------
+local settingsFrame = tabContentFrames["Settings"]
+local yset = 18
+local function makeSettingsItemFrame(h)
+	local item = Instance.new("Frame")
+	item.Name = "Item"
+	item.Size = UDim2.new(1, -32, 0, h or 52)
+	item.Position = UDim2.new(0, 16, 0, yset)
+	item.BackgroundColor3 = currentTheme.ITEM_BG
+	item.Parent = settingsFrame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = item
+	yset = yset + (h or 52) + 10
+	return item
+end
 
--- K Hotkey to toggle main GUI visibility with fade
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.K then
-        if gui2Frame.Visible then
-            local tween = TweenService:Create(gui2Frame, TweenInfo.new(0.3), {BackgroundTransparency = 1})
-            tween:Play()
-            tween.Completed:Wait()
-            gui2Frame.Visible = false
-            gui2Frame.BackgroundTransparency = 0
-        else
-            gui2Frame.Visible = true
-            gui2Frame.BackgroundTransparency = 1
-            local tween = TweenService:Create(gui2Frame, TweenInfo.new(0.3), {BackgroundTransparency = 0})
-            tween:Play()
+-- WalkSpeed & JumpPower
+local wsjpItem = makeSettingsItemFrame(66)
+local wsLabel = Instance.new("TextLabel")
+wsLabel.Size = UDim2.new(0, 110, 0, 23)
+wsLabel.Position = UDim2.new(0, 10, 0, 8)
+wsLabel.BackgroundTransparency = 1
+wsLabel.Text = "WalkSpeed:"
+wsLabel.TextColor3 = currentTheme.TEXT
+wsLabel.TextSize = 15
+wsLabel.Font = Enum.Font.Gotham
+wsLabel.TextXAlignment = Enum.TextXAlignment.Left
+wsLabel.Parent = wsjpItem
+
+local wsBox = Instance.new("TextBox")
+wsBox.Size = UDim2.new(0, 60, 0, 26)
+wsBox.Position = UDim2.new(0, 120, 0, 7)
+wsBox.BackgroundColor3 = Color3.fromRGB(34, 54, 90)
+wsBox.Text = "16"
+wsBox.TextColor3 = currentTheme.TEXT
+wsBox.TextSize = 15
+wsBox.Font = Enum.Font.GothamBold
+wsBox.Parent = wsjpItem
+Instance.new("UICorner", wsBox).CornerRadius = UDim.new(0, 7)
+
+local jpLabel = wsLabel:Clone()
+jpLabel.Text = "JumpPower:"
+jpLabel.Position = UDim2.new(0, 210, 0, 8)
+jpLabel.Parent = wsjpItem
+
+local jpBox = wsBox:Clone()
+jpBox.Position = UDim2.new(0, 320, 0, 7)
+jpBox.Text = "50"
+jpBox.Parent = wsjpItem
+
+wsBox.FocusLost:Connect(function()
+    local num = tonumber(wsBox.Text)
+    if num and num > 0 then
+        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = num
+            notify("WalkSpeed set to "..num)
         end
     end
 end)
+jpBox.FocusLost:Connect(function()
+    local num = tonumber(jpBox.Text)
+    if num and num > 0 then
+        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            player.Character:FindFirstChildOfClass("Humanoid").JumpPower = num
+            notify("JumpPower set to "..num)
+        end
+    end
+end)
+
+-- Fly Speed Slider/Box
+local flySpeedItem = makeSettingsItemFrame(52)
+local flySpeedLabel = Instance.new("TextLabel")
+flySpeedLabel.Size = UDim2.new(0, 120, 0, 23)
+flySpeedLabel.Position = UDim2.new(0, 10, 0, 14)
+flySpeedLabel.BackgroundTransparency = 1
+flySpeedLabel.Text = "Fly Speed:"
+flySpeedLabel.TextColor3 = currentTheme.TEXT
+flySpeedLabel.TextSize = 15
+flySpeedLabel.Font = Enum.Font.Gotham
+flySpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+flySpeedLabel.Parent = flySpeedItem
+
+local flySpeedBox = Instance.new("TextBox")
+flySpeedBox.Size = UDim2.new(0, 60, 0, 26)
+flySpeedBox.Position = UDim2.new(0, 120, 0, 11)
+flySpeedBox.BackgroundColor3 = Color3.fromRGB(34, 54, 90)
+flySpeedBox.Text = "1"
+flySpeedBox.TextColor3 = currentTheme.TEXT
+flySpeedBox.TextSize = 15
+flySpeedBox.Font = Enum.Font.GothamBold
+flySpeedBox.Parent = flySpeedItem
+Instance.new("UICorner", flySpeedBox).CornerRadius = UDim.new(0, 7)
+
+-- Fly Button
+local flyItem = makeSettingsItemFrame()
+local flyBtn = Instance.new("TextButton")
+flyBtn.Size = UDim2.new(0.6, -8, 1, 0)
+flyBtn.Position = UDim2.new(0, 0, 0, 0)
+flyBtn.BackgroundColor3 = currentTheme.ACCENT
+flyBtn.Text = "🛸 Toggle Fly (E)"
+flyBtn.TextColor3 = currentTheme.TEXT
+flyBtn.TextSize = 20
+flyBtn.Font = Enum.Font.GothamBold
+flyBtn.Parent = flyItem
+Instance.new("UICorner", flyBtn).CornerRadius = UDim.new(0, 10)
+local flyStatusLbl = Instance.new("TextLabel")
+flyStatusLbl.Size = UDim2.new(0.4, -8, 1, 0)
+flyStatusLbl.Position = UDim2.new(0.6, 8, 0, 0)
+flyStatusLbl.BackgroundTransparency = 1
+flyStatusLbl.Text = "Fly: OFF"
+flyStatusLbl.TextColor3 = currentTheme.OUTLINE
+flyStatusLbl.TextSize = 17
+flyStatusLbl.Font = Enum.Font.GothamBold
+flyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+flyStatusLbl.Parent = flyItem
+
+local FLYING = false
+local flyConn = nil
+local ctrl = {f = 0, b = 0, l = 0, r = 0}
+local FLYSPEED = tonumber(flySpeedBox.Text) or 1
+local function setFlyStatus(on)
+    FLYING = on
+    if on then
+        flyStatusLbl.Text = ("Fly: ON (Speed: "..FLYSPEED..")")
+        flyStatusLbl.TextColor3 = currentTheme.ACCENT
+    else
+        flyStatusLbl.Text = "Fly: OFF"
+        flyStatusLbl.TextColor3 = currentTheme.OUTLINE
+    end
+end
+local function Fly()
+    local BG = Instance.new("BodyGyro")
+    local BV = Instance.new("BodyVelocity")
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    BG.P = 9e4
+    BG.Parent = root
+    BV.Parent = root
+    BG.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    BG.cframe = root.CFrame
+    BV.velocity = Vector3.new(0, 0, 0)
+    BV.maxForce = Vector3.new(9e9, 9e9, 9e9)
+    setFlyStatus(true)
+    flyConn = RunService.RenderStepped:Connect(function()
+        if not FLYING or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+            BG:Destroy()
+            BV:Destroy()
+            if flyConn then flyConn:Disconnect() end
+            setFlyStatus(false)
+            return
+        end
+        local cam = workspace.CurrentCamera
+        BG.cframe = cam.CFrame
+        local speed = (tonumber(flySpeedBox.Text) or 1) * 50
+        BV.velocity = (cam.CFrame.lookVector * (ctrl.f - ctrl.b) + cam.CFrame.rightVector * (ctrl.r - ctrl.l)) * speed
+    end)
+end
+local function EndFly()
+    FLYING = false
+    ctrl = {f = 0, b = 0, l = 0, r = 0}
+    if flyConn then flyConn:Disconnect() end
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        for _,obj in ipairs(char.HumanoidRootPart:GetChildren()) do
+            if obj:IsA("BodyGyro") or obj:IsA("BodyVelocity") then
+                obj:Destroy()
+            end
+        end
+    end
+    setFlyStatus(false)
+end
+flyBtn.MouseButton1Click:Connect(function()
+    FLYSPEED = tonumber(flySpeedBox.Text) or 1
+    if not FLYING then
+        setFlyStatus(true)
+        Fly()
+    else
+        EndFly()
+    end
+end)
+flySpeedBox.FocusLost:Connect(function()
+	local num = tonumber(flySpeedBox.Text)
+    if num and num > 0 then
+        FLYSPEED = num
+        if FLYING then setFlyStatus(true) end
+    else
+        flySpeedBox.Text = tostring(FLYSPEED)
+    end
+end)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if FLYING then
+        if input.KeyCode == Enum.KeyCode.W then ctrl.f = 1 end
+        if input.KeyCode == Enum.KeyCode.S then ctrl.b = 1 end
+        if input.KeyCode == Enum.KeyCode.A then ctrl.l = 1 end
+        if input.KeyCode == Enum.KeyCode.D then ctrl.r = 1 end
+    end
+    if input.KeyCode == Enum.KeyCode.E then
+        FLYSPEED = tonumber(flySpeedBox.Text) or 1
+        if not FLYING then
+            setFlyStatus(true)
+            Fly()
+        else
+            EndFly()
+        end
+    end
+end)
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if FLYING then
+        if input.KeyCode == Enum.KeyCode.W then ctrl.f = 0 end
+        if input.KeyCode == Enum.KeyCode.S then ctrl.b = 0 end
+        if input.KeyCode == Enum.KeyCode.A then ctrl.l = 0 end
+        if input.KeyCode == Enum.KeyCode.D then ctrl.r = 0 end
+    end
+end)
+
+-- Always-On Anti-AFK
+local vu = game:GetService("VirtualUser")
+player.Idled:Connect(function()
+    vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+applyTheme(currentTheme)
+switchTab("Ninja Legends")
+frame.Visible = true
